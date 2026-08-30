@@ -1,43 +1,41 @@
-# Bot Kraken Web — Paper Trading
+# Trading Turbo 4.0 — Kraken alpha2 (Paper)
 
-Projeto único com:
-- bot de paper trading;
-- dados públicos da Kraken;
-- estratégia de suporte/resistência + tendência;
-- interface web;
-- saldo inicial fictício de R$ 1.000;
-- sem ordens reais e sem chave de API.
+Esta é uma evolução **cirúrgica** do bot Kraken que serviu de baseline.
 
-## Arquivos
-- `app.py` — servidor web e interface.
-- `bot_engine.py` — estratégia e motor do bot.
-- `requirements.txt` — dependências.
-- `railway.json` — comando de inicialização no Railway.
+## O que mudou nesta alpha2
+- decisão oficial em **15 minutos** (`DECISION_TIMEFRAME=15m`);
+- radar leve de até **100 pares** disponíveis na Kraken;
+- **Top 25 dinâmico**: pares entram e saem conforme proximidade estrutural, com pequena histerese para evitar troca nervosa;
+- gargalo com **Tendência Confirmada (1H + 15M alinhados)** antes dos gatilhos de S/R;
+- suporte/resistência continuam sendo a localização estrutural dos gatilhos;
+- eventos de rompimento de níveis são registrados em **shadow** (observação; não interferem na entrada nesta versão);
+- telemetria de quase-sinais (`gate x/5`).
 
-## Railway
-Suba estes arquivos na raiz de um repositório GitHub e conecte o repositório ao Railway.
+## O que NÃO mudou
+- PAPER trading: nenhuma ordem real;
+- risco por operação: 0,5% por padrão;
+- RR: 1,5 por padrão;
+- cálculo de stop/target do baseline;
+- gatilhos de `rejection` e `breakout_retest` foram preservados, agora avaliados em 15M;
+- uma posição global por vez.
 
-O Railway executará:
-`gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app:app`
-
-Depois gere um domínio público no Railway para abrir a interface.
-
-## Variáveis opcionais
+## Variáveis principais
 - `EXCHANGE_ID=kraken`
-- `SYMBOL=BTC/USDT`
-- `TIMEFRAME=5m`
+- `DECISION_TIMEFRAME=15m`
 - `HIGHER_TIMEFRAME=1h`
-- `STARTING_BALANCE=1000`
+- `RADAR_SIZE=100`
+- `FOCUS_SIZE=25`
+- `RADAR_BATCH=5` (quantos pares do radar são atualizados por rodada)
+- `RADAR_REFRESH_SECONDS=30`
+- `FOCUS_STICKINESS=2.0`
 - `RISK_PER_TRADE=0.005`
 - `RR=1.5`
-- `POLL_SECONDS=30`
 - `AUTOSTART=true`
 
-## Teste local
-1. `pip install -r requirements.txt`
-2. `python app.py`
-3. Abra `http://127.0.0.1:8080`
+A Kraken pode não ter 100 mercados spot distintos com a cotação preferida no momento. O bot descobre os mercados ativos em runtime e usa até 100 pares USD/USDT, priorizando USDT.
 
-## Importante
-Esta versão é somente PAPER TRADING. Não envia ordens reais.
-Resultados de simulação não garantem resultados futuros.
+## Railway
+O `railway.json` continua compatível. Suba estes arquivos na raiz do repositório conectado ao Railway.
+
+## Segurança
+Somente PAPER TRADING. Resultados históricos ou simulados não garantem lucro futuro.

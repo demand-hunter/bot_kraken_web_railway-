@@ -11,7 +11,7 @@ HTML = r"""
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bot BTC — Paper Trading</title>
+<title>Trading Turbo 4.0 — Paper Trading</title>
 <style>
 :root { --bg:#0b1020; --card:#131a2a; --muted:#8e9ab5; --text:#eef3ff; --ok:#42d392; --bad:#ff6b6b; --accent:#5b8cff; }
 * { box-sizing:border-box; }
@@ -42,8 +42,8 @@ button { border:0; border-radius:10px; padding:11px 17px; font-weight:700; curso
 <div class="wrap">
   <div class="top">
     <div>
-      <h1>Bot BTC — Paper Trading</h1>
-      <div class="small">Kraken • dados reais de mercado • saldo fictício</div>
+      <h1>Trading Turbo 4.0 — Paper Trading</h1>
+      <div class="small">Kraken • Radar 100 → Top 25 dinâmico • decisão 15M • saldo fictício</div>
     </div>
     <div class="badge" id="mode">PAPER</div>
   </div>
@@ -57,8 +57,8 @@ button { border:0; border-radius:10px; padding:11px 17px; font-weight:700; curso
   <div class="grid">
     <div class="card"><div class="label">STATUS</div><div class="value" id="running">—</div></div>
     <div class="card"><div class="label">SALDO</div><div class="value" id="balance">—</div></div>
-    <div class="card"><div class="label">PREÇO BTC</div><div class="value" id="price">—</div></div>
-    <div class="card"><div class="label">TENDÊNCIA 1H</div><div class="value" id="trend">—</div></div>
+    <div class="card"><div class="label">PREÇO / PAR EM FOCO</div><div class="value" id="price">—</div></div>
+    <div class="card"><div class="label">TENDÊNCIA CONFIRMADA</div><div class="value" id="trend">—</div></div>
 
     <div class="card"><div class="label">SUPORTE</div><div class="value" id="support">—</div></div>
     <div class="card"><div class="label">RESISTÊNCIA</div><div class="value" id="resistance">—</div></div>
@@ -68,6 +68,11 @@ button { border:0; border-radius:10px; padding:11px 17px; font-weight:700; curso
     <div class="card"><div class="label">WIN / LOSS</div><div class="value" id="wl">0 / 0</div></div>
     <div class="card"><div class="label">PNL ACUMULADO</div><div class="value" id="pnl">R$0,00</div></div>
     <div class="card wide"><div class="label">POSIÇÃO ABERTA</div><div class="value" id="position">Nenhuma</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="label">RADAR 100 → TOP 25 DINÂMICO</div>
+    <div id="radar" class="small">Carregando radar...</div>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -102,7 +107,7 @@ async function refresh(){
     document.getElementById('running').textContent = s.running ? 'RODANDO' : 'PARADO';
     document.getElementById('running').className = 'value ' + (s.running ? 'status-ok':'status-bad');
     document.getElementById('balance').textContent = brl(s.balance);
-    document.getElementById('price').textContent = s.last_price == null ? '—' : '$ ' + num(s.last_price);
+    document.getElementById('price').textContent = s.last_price == null ? '—' : `${s.symbol} | $ ${num(s.last_price)}`;
     document.getElementById('trend').textContent = s.trend;
     document.getElementById('support').textContent = s.support == null ? '—' : '$ ' + num(s.support);
     document.getElementById('resistance').textContent = s.resistance == null ? '—' : '$ ' + num(s.resistance);
@@ -110,7 +115,9 @@ async function refresh(){
     document.getElementById('hit').textContent = num(s.stats.hit_rate) + '%';
     document.getElementById('wl').textContent = s.stats.wins + ' / ' + s.stats.losses;
     document.getElementById('pnl').textContent = brl(s.stats.pnl);
-    document.getElementById('mode').textContent = s.mode;
+    document.getElementById('mode').textContent = s.mode + ' • ' + (s.decision_timeframe || '15m');
+    const f=(s.radar && s.radar.focus)||[];
+    document.getElementById('radar').textContent = `Universo ${s.radar?.universe_size||0} • foco ${s.radar?.focus_size||0} • varreduras ${s.radar?.scan_count||0}\n` + f.slice(0,10).map((x,i)=>`${i+1}. ${x.symbol} — ${num(x.score||0)}`).join(' | ');
     document.getElementById('error').textContent = s.last_error || 'Nenhum';
     document.getElementById('position').textContent = s.position
       ? `${s.position.side.toUpperCase()} | entrada ${num(s.position.entry)} | stop ${num(s.position.stop)} | alvo ${num(s.position.target)}`
