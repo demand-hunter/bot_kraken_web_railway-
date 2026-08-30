@@ -22,6 +22,9 @@ VOLUME_FACTOR = float(os.getenv('VOLUME_FACTOR', '1.25'))
 POLL_SECONDS = int(os.getenv('POLL_SECONDS', '30'))
 STATE_FILE = os.getenv('STATE_FILE', 'state.json')
 TRADES_FILE = os.getenv('TRADES_FILE', 'trades.csv')
+DURATION_SHADOW_FILE = os.getenv('DURATION_SHADOW_FILE', 'duration_shadow.json')
+DURATION_RESULTS_FILE = os.getenv('DURATION_RESULTS_FILE', 'duration_shadow.csv')
+DURATION_HORIZONS = (5, 10, 15, 20, 30, 45, 60)
 RADAR_SIZE = int(os.getenv('RADAR_SIZE', '100'))
 FOCUS_SIZE = int(os.getenv('FOCUS_SIZE', '25'))
 RADAR_BATCH = int(os.getenv('RADAR_BATCH', '5'))
@@ -79,6 +82,98 @@ class TradingBot:
         self.decision_count = 0
         self.near_signals = []
         self.shadow_levels = {}
+        self.duration_shadows = self.load_duration_shadows()
+
+
+    # -------- V4 duration shadow: observation only, never changes live/paper decisions --------
+    def load_duration_shadows(self):
+        if not os.path.exists(DURATION_SHADOW_FILE):
+            return []
+        try:
+            with open(DURATION_SHADOW_FILE, 'r', encoding='utf-8') as f:
+                rows = json.load(f)
+            return rows if isinstance(rows, list) else []
+        except Exception:
+            return []
+
+    def save_duration_shadows(self):
+        try:
+            with open(DURATION_SHADOW_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.duration_shadows, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            self.add_log(f'DURATION SHADOW | erro ao salvar: {repr(e)}')
+
+    def register_duration_shadow(self, ev, pos):
+        opened = pd.Timestamp(pos.opened_at)
+        item = {
+            'id': f"{pos.symbol}|{pos.opened_at}", 'symbol': pos.symbol, 'side': pos.side,
+            'entry': float(pos.entry), 'opened_at': pos.opened_at, 'reason': pos.reason,
+            'trend': ev.get('trend'), 'trend_quality': float(ev.get('trend_quality', 0.0)),
+            'support': float(ev.get('support', 0.0)), 'resistance': float(ev.get('resistance', 0.0)),
+            'radar_score': float(ev.get('radar_score', 0.0)), 'decision_timeframe': DECISION_TIMEFRAME,
+            'pending': list(DURATION_HORIZONS), 'results': {}
+        }
+        self.duration_shadows.append(item)
+        self.save_duration_shadows()
+        self.add_log('DURATION SHADOW | registrado ' + pos.symbol + ' | observar ' + '/'.join(str(x) for x in DURATION_HORIZONS) + 'M')
+
+    def _shadow_result(self, side, entry, exit_price):
+        # Full feed precision: no display rounding is used to decide WIN/LOSS/TIE.
+        if exit_price == entry:
+            return 'TIE'
+        if side == 'long':
+            return 'WIN' if exit_price > entry else 'LOSS'
+        return 'WIN' if exit_price < entry else 'LOSS'
+
+    def update_duration_shadows(self):
+        if not self.duration_shadows:
+            return
+        now = pd.Timestamp.now(tz='UTC')
+        changed = False
+        for item in self.duration_shadows:
+            pending = list(item.get('pending', []))
+            if not pending:
+                continue
+            opened = pd.Timestamp(item['opened_at'])
+            due = [m for m in pending if now >= opened + pd.Timedelta(minutes=int(m))]
+            if not due:
+                continue
+            try:
+                # 1M is used only as a measuring ruler for expiry; it does not generate entries.
+                df = self.fetch_df(item['symbol'], '1m', 120)
+                for m in sorted(due):
+                    target = opened + pd.Timedelta(minutes=int(m))
+                    eligible = df[df['dt'] >= target.floor('min')]
+                    if eligible.empty:
+                        continue
+                    candle = eligible.iloc[0]
+                    exit_price = float(candle['close'])
+                    result = self._shadow_result(item['side'], float(item['entry']), exit_price)
+                    delta = (exit_price - float(item['entry'])) if item['side'] == 'long' else (float(item['entry']) - exit_price)
+                    delta_pct = (delta / float(item['entry']) * 100.0) if item['entry'] else 0.0
+                    row = {
+                        'shadow_id': item['id'], 'symbol': item['symbol'], 'side': item['side'],
+                        'opened_at': item['opened_at'], 'horizon_min': int(m), 'entry': item['entry'],
+                        'observed_at': str(candle['dt']), 'exit_price': exit_price, 'result': result,
+                        'delta': delta, 'delta_pct': delta_pct, 'reason': item.get('reason'),
+                        'trend': item.get('trend'), 'trend_quality': item.get('trend_quality'),
+                        'support': item.get('support'), 'resistance': item.get('resistance'),
+                        'radar_score': item.get('radar_score'), 'decision_timeframe': item.get('decision_timeframe')
+                    }
+                    pd.DataFrame([row]).to_csv(DURATION_RESULTS_FILE, mode='a', header=not os.path.exists(DURATION_RESULTS_FILE), index=False)
+                    item.setdefault('results', {})[str(m)] = row
+                    item['pending'].remove(m)
+                    changed = True
+                    self.add_log(f"DURATION SHADOW | {item['symbol']} +{m}M = {result} | {item['entry']:.8g}->{exit_price:.8g} | delta={delta_pct:+.4f}%")
+            except Exception as e:
+                self.add_log(f"DURATION SHADOW | {item.get('symbol')} erro: {repr(e)}")
+        # Keep completed observations for a while in JSON; CSV is the append-only history.
+        if changed:
+            if len(self.duration_shadows) > 200:
+                completed = [x for x in self.duration_shadows if not x.get('pending')]
+                active = [x for x in self.duration_shadows if x.get('pending')]
+                self.duration_shadows = completed[-100:] + active
+            self.save_duration_shadows()
 
     def ema(self, s, n):
         return s.ewm(span=n, adjust=False).mean()
@@ -449,6 +544,9 @@ class TradingBot:
             self.last_update=None; self.last_error=None; self.logs.clear(); self.near_signals=[]
             if os.path.exists(STATE_FILE): os.remove(STATE_FILE)
             if os.path.exists(TRADES_FILE): os.remove(TRADES_FILE)
+            if os.path.exists(DURATION_SHADOW_FILE): os.remove(DURATION_SHADOW_FILE)
+            if os.path.exists(DURATION_RESULTS_FILE): os.remove(DURATION_RESULTS_FILE)
+            self.duration_shadows=[]
             self.save_state(); self.add_log(f'Simulação resetada para R${STARTING_BALANCE:.2f}.')
             return True, 'Reset concluído.'
 
@@ -490,6 +588,7 @@ class TradingBot:
             global_id=f"{best['symbol']}|{best['candle_id']}"
             if global_id != self.last_signal_candle:
                 self.position=self.open_position(best['symbol'],best['signal'],float(best['closed']['close']),float(best['atr']),best['reason'])
+                self.register_duration_shadow(best, self.position)
                 self.last_signal_candle=global_id
                 self.add_log(
                     f"ABRIU {best['signal'].upper()} {best['symbol']} {best['reason']} @ {self.position.entry:.8g} | "
@@ -508,6 +607,9 @@ class TradingBot:
                 now=time.time()
                 if now-self.last_radar_at >= RADAR_REFRESH_SECONDS:
                     self.refresh_radar_batch()
+
+                # Independent observer: records hypothetical expiry outcomes only.
+                self.update_duration_shadows()
 
                 with self.lock:
                     if self.position:
