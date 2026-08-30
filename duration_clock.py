@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+from lab_history import LabHistory
 
 DURATION_SHADOW_FILE = os.getenv("DURATION_SHADOW_FILE", "duration_shadow.json")
 DURATION_RESULTS_FILE = os.getenv("DURATION_RESULTS_FILE", "duration_shadow.csv")
@@ -14,6 +15,7 @@ class DurationShadowClock:
         self.fetch_df = fetch_df
         self.add_log = add_log
         self.items = self._load()
+        self.lab_history = LabHistory(add_log)
 
     def _load(self):
         if not os.path.exists(DURATION_SHADOW_FILE):
@@ -54,6 +56,7 @@ class DurationShadowClock:
             "context": context, "pending": list(DURATION_HORIZONS), "results": {},
         })
         self._save()
+        self.lab_history.register_sample(self.items[-1])
         missing_txt = ",".join(missing) if missing else "nenhum"
         horizons = "/".join(str(x) for x in DURATION_HORIZONS)
         self.add_log(
@@ -109,6 +112,7 @@ class DurationShadowClock:
                         header=not os.path.exists(DURATION_RESULTS_FILE), index=False
                     )
                     item.setdefault("results", {})[str(m)] = row
+                    self.lab_history.update_horizon(item, row)
                     item["pending"].remove(m)
                     changed = True
                     self.add_log(
