@@ -212,10 +212,79 @@ class TradingBot:
             return round(max(0.0,min(100.0,score)),2), {
                 'symbol':symbol,'score':round(score,2),'trend':round(trend_alignment,2),
                 'level':round(level_proximity,2),'volatility':round(volatility,2),'volume':round(volume,2),
-                'price':round(price,8),'error':None
+                'atr_pct':round(atr_pct,6),'price':round(price,8),'error':None
             }
         except Exception as e:
             return 0.0, {'symbol':symbol,'score':0.0,'error':str(e)}
+
+    def _adjusted_radar_score(self, symbol, old_focus=None):
+        old_focus = old_focus if old_focus is not None else set(self.focus)
+        return (
+            self.radar_scores.get(symbol, 0.0)
+            - self.tie_activity_filter.penalty(symbol)
+            + (FOCUS_STICKINESS if symbol in old_focus else 0.0)
+        )
+
+    def _ranking_order(self, old_focus=None):
+        old_focus = old_focus if old_focus is not None else set(self.focus)
+        return sorted(
+            self.radar_scores,
+            key=lambda s: self._adjusted_radar_score(s, old_focus),
+            reverse=True,
+        )
+
+    def audit_ranking_boundary(self):
+        """LAB D: grava ranks 21-35 dentro do lab_history.csv já existente."""
+        if not self.radar_scores:
+            return
+
+        ranked = self._ranking_order(set(self.focus))
+
+        # O estudo D só faz sentido quando pelo menos 35 pares já receberam score real.
+        # Após um restart o radar aquece em lotes; nesse período não inventamos ranks.
+        if len(ranked) < 35:
+            return
+
+        stamp = datetime.now(timezone.utc).isoformat()
+        lab = getattr(self.duration_clock, "lab_history", None)
+        if lab is None:
+            return
+
+        for idx in range(20, 35):
+            sym = ranked[idx]
+            meta = self.radar_meta.get(sym, {}) or {}
+            penalty = self.tie_activity_filter.penalty(sym)
+            raw_score = float(self.radar_scores.get(sym, 0.0))
+            adjusted_score = float(self._adjusted_radar_score(sym, set(self.focus)))
+
+            context = {
+                "sample_type": "ranking_audit",
+                "study": "D",
+                "rank": idx + 1,
+                "band": "focus_tail" if idx < FOCUS_SIZE else "substitute",
+                "in_focus": sym in self.focus,
+                "raw_score": round(raw_score, 4),
+                "tie_penalty": round(float(penalty), 4),
+                "adjusted_score": round(adjusted_score, 4),
+                "atr_pct": meta.get("atr_pct"),
+                "volatility_score": meta.get("volatility"),
+                "volume_score": meta.get("volume"),
+                "trend_score": meta.get("trend"),
+                "level_score": meta.get("level"),
+                "radar_score": raw_score,
+                "decision_timeframe": DECISION_TIMEFRAME,
+            }
+
+            lab.register_sample({
+                "id": f"ranking|{stamp}|{idx + 1}|{sym}",
+                "sample_type": "ranking_audit",
+                "opened_at": stamp,
+                "symbol": sym,
+                "side": "",
+                "entry": meta.get("price"),
+                "reason": "ranking_boundary",
+                "context": context,
+            })
 
     def refresh_radar_batch(self):
         if not self.universe:
@@ -232,15 +301,7 @@ class TradingBot:
             self.scan_count += 1
 
         old_focus = set(self.focus)
-        ranked = sorted(
-            self.radar_scores,
-            key=lambda s: (
-                self.radar_scores.get(s,0.0)
-                - self.tie_activity_filter.penalty(s)
-                + (FOCUS_STICKINESS if s in old_focus else 0.0)
-            ),
-            reverse=True
-        )
+        ranked = self._ranking_order(old_focus)
         # During warmup fill missing places from yet-unscanned universe, but scanned pairs outrank seeds.
         seeds = [s for s in self.universe if s not in ranked]
         self.focus = (ranked + seeds)[:min(FOCUS_SIZE,len(self.universe))]
@@ -324,7 +385,7 @@ class TradingBot:
             'symbol':symbol,'df':df,'closed':closed,'candle_id':candle_id,'atr':atrv,
             'support':support,'resistance':resistance,'trend':trend,'trend_quality':trend_q,
             'c1':c1,'c15':c15,'signal':sig,'reason':reason,'gate':gate,'missing':missing,'level_dist_atr':round(level_dist,3),
-            'radar_score':self.radar_scores.get(symbol,0.0),
+            'radar_score':self.radar_scores.get(symbol,0.0),'gate_checks':gate_checks,
             'shadow_events':self.shadow_level_events(symbol,support,resistance,closed)
         }
 
@@ -484,6 +545,8 @@ class TradingBot:
 
     def run_decision_cycle(self):
         if not self.focus: return
+        # LAB D: registra ranks 21-35 no lab_history.csv, sem afetar o ranking.
+        self.audit_ranking_boundary()
         candidates=[]; near=[]
         top_display=None
         for sym in list(self.focus):
@@ -522,9 +585,17 @@ class TradingBot:
                                 'direction_source': direction_source,
                                 'trend': ev.get('trend'),
                                 'trend_quality': ev.get('trend_quality'),
+                                'direction_1h': ev.get('c1', {}).get('direction'),
+                                'direction_15m': ev.get('c15', {}).get('direction'),
+                                'gate': ev.get('gate'),
+                                'gate_checks': ev.get('gate_checks', {}),
+                                'trigger_present': bool(ev.get('signal')),
                                 'support': ev.get('support'),
                                 'resistance': ev.get('resistance'),
+                                'level_dist_atr': ev.get('level_dist_atr'),
+                                'atr': ev.get('atr'),
                                 'radar_score': ev.get('radar_score'),
+                                'shadow_events': ev.get('shadow_events', []),
                                 'decision_timeframe': DECISION_TIMEFRAME,
                             },
                             sample_id=f"4of5|{ev['symbol']}|{ev['candle_id']}",
@@ -560,9 +631,17 @@ class TradingBot:
                         'missing': [],
                         'trend': best.get('trend'),
                         'trend_quality': best.get('trend_quality'),
+                        'direction_1h': best.get('c1', {}).get('direction'),
+                        'direction_15m': best.get('c15', {}).get('direction'),
+                        'gate': best.get('gate'),
+                        'gate_checks': best.get('gate_checks', {}),
+                        'trigger_present': bool(best.get('signal')),
                         'support': best.get('support'),
                         'resistance': best.get('resistance'),
+                        'level_dist_atr': best.get('level_dist_atr'),
+                        'atr': best.get('atr'),
                         'radar_score': best.get('radar_score'),
+                        'shadow_events': best.get('shadow_events', []),
                         'decision_timeframe': DECISION_TIMEFRAME,
                     },
                     sample_id=f"5of5|{best['symbol']}|{best['candle_id']}",
