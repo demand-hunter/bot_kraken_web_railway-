@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 import ccxt
 from duration_clock import DurationShadowClock
-from precision_probe import PrecisionProbe
 from tie_activity_filter import TieActivityFilter
 
 # ---------------- CONFIG KRAKEN / V4 ALPHA2 ----------------
@@ -86,7 +85,6 @@ class TradingBot:
         self.near_signals = []
         self.shadow_levels = {}
         self.duration_clock = DurationShadowClock(self.fetch_df, self.add_log)
-        self.precision_probe = PrecisionProbe(exchange, self.add_log)
         self.tie_activity_filter = TieActivityFilter(DURATION_RESULTS_FILE)
 
 
@@ -590,7 +588,6 @@ class TradingBot:
 
                 # Independent observer: records hypothetical expiry outcomes only.
                 self.duration_clock.update()
-                self.precision_probe.update()
 
                 with self.lock:
                     if self.position:
