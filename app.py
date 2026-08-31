@@ -1,9 +1,12 @@
 import os
-from flask import Flask, jsonify, request, render_template_string
+from flask import Flask, jsonify, request, render_template_string, send_file
 from bot_engine import TradingBot
 
 app = Flask(__name__)
 bot = TradingBot()
+
+LAB_HISTORY_FILE = os.getenv("LAB_HISTORY_FILE", "lab_history.csv")
+RANKING_AUDIT_FILE = os.getenv("RANKING_AUDIT_FILE", "ranking_audit.csv")
 
 HTML = r"""
 <!doctype html>
@@ -26,10 +29,11 @@ h1 { margin:0; font-size:26px; }
 .value { font-size:22px; font-weight:700; word-break:break-word; }
 .wide { grid-column:span 2; }
 .actions { display:flex; gap:10px; flex-wrap:wrap; margin:18px 0; }
-button { border:0; border-radius:10px; padding:11px 17px; font-weight:700; cursor:pointer; }
+button, .download-btn { border:0; border-radius:10px; padding:11px 17px; font-weight:700; cursor:pointer; text-decoration:none; color:#07111f; display:inline-block; font-size:13px; }
 .start { background:var(--ok); }
 .stop { background:#ffc857; }
 .reset { background:var(--bad); color:white; }
+.download-btn { background:#8fb5ff; }
 .log { height:340px; overflow:auto; background:#080c17; padding:14px; border-radius:12px; font-family:monospace; font-size:12px; line-height:1.6; white-space:pre-wrap; }
 .status-ok { color:var(--ok); }
 .status-bad { color:var(--bad); }
@@ -52,6 +56,8 @@ button { border:0; border-radius:10px; padding:11px 17px; font-weight:700; curso
     <button class="start" onclick="act('/api/start')">INICIAR BOT</button>
     <button class="stop" onclick="act('/api/stop')">PARAR BOT</button>
     <button class="reset" onclick="resetBot()">RESETAR SIMULAÇÃO</button>
+    <a class="download-btn" href="/download/lab_history.csv">BAIXAR LAB HISTORY</a>
+    <a class="download-btn" href="/download/ranking_audit.csv">BAIXAR RANKING AUDIT</a>
   </div>
 
   <div class="grid">
@@ -160,6 +166,29 @@ def stop():
 def reset():
     ok, message = bot.reset()
     return jsonify({"ok": ok, "message": message}), (200 if ok else 409)
+
+def _download_csv(path, download_name):
+    absolute_path = os.path.abspath(path)
+    if not os.path.isfile(absolute_path):
+        return jsonify({
+            "ok": False,
+            "message": f"{download_name} ainda não existe neste deploy."
+        }), 404
+    return send_file(
+        absolute_path,
+        mimetype="text/csv; charset=utf-8",
+        as_attachment=True,
+        download_name=download_name,
+        max_age=0,
+    )
+
+@app.get("/download/lab_history.csv")
+def download_lab_history():
+    return _download_csv(LAB_HISTORY_FILE, "lab_history.csv")
+
+@app.get("/download/ranking_audit.csv")
+def download_ranking_audit():
+    return _download_csv(RANKING_AUDIT_FILE, "ranking_audit.csv")
 
 if os.getenv("AUTOSTART", "true").lower() in ("1","true","yes","on"):
     bot.start()
