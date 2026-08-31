@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import ccxt
 from duration_clock import DurationShadowClock
+from precision_probe import PrecisionProbe
 
 # ---------------- CONFIG KRAKEN / V4 ALPHA2 ----------------
 EXCHANGE_ID = os.getenv('EXCHANGE_ID', 'kraken').lower()
@@ -84,6 +85,7 @@ class TradingBot:
         self.near_signals = []
         self.shadow_levels = {}
         self.duration_clock = DurationShadowClock(self.fetch_df, self.add_log)
+        self.precision_probe = PrecisionProbe(exchange, self.add_log)
 
 
     # Duration SHADOW lives in duration_clock.py (observer only).
@@ -510,10 +512,6 @@ class TradingBot:
                                 'direction_source': direction_source,
                                 'trend': ev.get('trend'),
                                 'trend_quality': ev.get('trend_quality'),
-                                'direction_1h': ev.get('c1', {}).get('direction'),
-                                'direction_15m': ev.get('c15', {}).get('direction'),
-                                'level_dist_atr': ev.get('level_dist_atr'),
-                                'atr': ev.get('atr'),
                                 'support': ev.get('support'),
                                 'resistance': ev.get('resistance'),
                                 'radar_score': ev.get('radar_score'),
@@ -552,10 +550,6 @@ class TradingBot:
                         'missing': [],
                         'trend': best.get('trend'),
                         'trend_quality': best.get('trend_quality'),
-                        'direction_1h': best.get('c1', {}).get('direction'),
-                        'direction_15m': best.get('c15', {}).get('direction'),
-                        'level_dist_atr': best.get('level_dist_atr'),
-                        'atr': best.get('atr'),
                         'support': best.get('support'),
                         'resistance': best.get('resistance'),
                         'radar_score': best.get('radar_score'),
@@ -584,6 +578,7 @@ class TradingBot:
 
                 # Independent observer: records hypothetical expiry outcomes only.
                 self.duration_clock.update()
+                self.precision_probe.update()
 
                 with self.lock:
                     if self.position:
