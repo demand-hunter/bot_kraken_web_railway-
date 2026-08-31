@@ -111,10 +111,13 @@ class DurationShadowClock:
                     item.setdefault("results", {})[str(m)] = row
                     item["pending"].remove(m)
                     changed = True
-                    self.add_log(
-                        f"DURATION SHADOW | {item['symbol']} | tipo={item.get('sample_type','shadow')} "
-                        f"+{m}M = {result} | {entry:.17g}->{exit_price:.17g} | delta={delta_pct:+.8f}%"
-                    )
+                    # Keep TIE in the laboratory files, but hide it from the operational log/UI.
+                    # WIN/LOSS remain visible.
+                    if result != "TIE":
+                        self.add_log(
+                            f"DURATION SHADOW | {item['symbol']} | tipo={item.get('sample_type','shadow')} "
+                            f"+{m}M = {result} | {entry:.17g}->{exit_price:.17g} | delta={delta_pct:+.8f}%"
+                        )
             except Exception as e:
                 self.add_log(f"DURATION SHADOW | {item.get('symbol')} erro: {repr(e)}")
 

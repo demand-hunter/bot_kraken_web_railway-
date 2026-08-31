@@ -7,6 +7,7 @@ import numpy as np
 import ccxt
 from duration_clock import DurationShadowClock
 from precision_probe import PrecisionProbe
+from tie_activity_filter import TieActivityFilter
 
 # ---------------- CONFIG KRAKEN / V4 ALPHA2 ----------------
 EXCHANGE_ID = os.getenv('EXCHANGE_ID', 'kraken').lower()
@@ -86,6 +87,7 @@ class TradingBot:
         self.shadow_levels = {}
         self.duration_clock = DurationShadowClock(self.fetch_df, self.add_log)
         self.precision_probe = PrecisionProbe(exchange, self.add_log)
+        self.tie_activity_filter = TieActivityFilter(DURATION_RESULTS_FILE)
 
 
     # Duration SHADOW lives in duration_clock.py (observer only).
@@ -234,7 +236,11 @@ class TradingBot:
         old_focus = set(self.focus)
         ranked = sorted(
             self.radar_scores,
-            key=lambda s: self.radar_scores.get(s,0.0) + (FOCUS_STICKINESS if s in old_focus else 0.0),
+            key=lambda s: (
+                self.radar_scores.get(s,0.0)
+                - self.tie_activity_filter.penalty(s)
+                + (FOCUS_STICKINESS if s in old_focus else 0.0)
+            ),
             reverse=True
         )
         # During warmup fill missing places from yet-unscanned universe, but scanned pairs outrank seeds.
@@ -425,7 +431,13 @@ class TradingBot:
                 'avg_win':round(avg_win,2),'avg_loss':round(avg_loss,2)}
 
     def radar_snapshot(self):
-        rows = [self.radar_meta.get(s, {'symbol':s,'score':self.radar_scores.get(s,0.0),'error':None}) for s in self.focus]
+        rows = []
+        for s in self.focus:
+            row = dict(self.radar_meta.get(s, {'symbol':s,'score':self.radar_scores.get(s,0.0),'error':None}))
+            # Diagnostic metadata only; existing UI may ignore these fields.
+            row['tie_penalty'] = self.tie_activity_filter.penalty(s)
+            row['tie_activity'] = self.tie_activity_filter.meta(s)
+            rows.append(row)
         return {'universe_size':len(self.universe),'focus_size':len(self.focus),'scan_count':self.scan_count,'focus':rows}
 
     def snapshot(self):
