@@ -27,3 +27,109 @@
 4of5|XTZ/USDT|2026-08-30 21:15:00+00:00,4of5_shadow,2026-08-30 21:30:00+00:00,XTZ/USDT,,0.21737,4of5_shadow,trigger,,,,,,,,,,,15m,"{""sample_type"":""4of5_shadow"",""missing"":[""trigger""],""decision_timeframe"":""15m"",""source"":""reconstructed_from_conversation_logs"",""reconstruction_note"":""Campos não presentes no log original foram deixados vazios; observed_at não foi inventado.""}",TIE,0.21737,0.0,,TIE,0.21737,0.0,,,,,,,,,,,,,,,,,,,,,
 4of5|UNITAS/USDT|2026-08-30 21:30:00+00:00,4of5_shadow,2026-08-30 21:45:00+00:00,UNITAS/USDT,,,4of5_shadow,trigger,,,,,,,,,,,15m,"{""sample_type"":""4of5_shadow"",""missing"":[""trigger""],""decision_timeframe"":""15m"",""source"":""reconstructed_from_conversation_logs"",""reconstruction_note"":""Campos não presentes no log original foram deixados vazios; observed_at não foi inventado.""}",,,,,,,,,,,,,,,,,,,,,,,,,,,,
 4of5|USDPT/USDT|2026-08-30 21:30:00+00:00,4of5_shadow,2026-08-30 21:45:00+00:00,USDPT/USDT,,,4of5_shadow,trigger,,,,,,,,,,,15m,"{""sample_type"":""4of5_shadow"",""missing"":[""trigger""],""decision_timeframe"":""15m"",""source"":""reconstructed_from_conversation_logs"",""reconstruction_note"":""Campos não presentes no log original foram deixados vazios; observed_at não foi inventado.""}",,,,,,,,,,,,,,,,,,,,,,,,,,,,
+
+--------------------------------------------------------------------------------------------------------------------------
+
+nome,origem,turno_usuario
+trading turbo(2).zip,upload,0
+README.md,generated,7
+ROADMAP_V4.md,generated,7
+Trading_Turbo_4.0_Adaptive_Engine_alpha1.zip,generated,7
+bot_kraken_web_railway (1).zip,upload,17
+Trading_Turbo_4.0_Kraken_alpha2.zip,generated,18
+CHANGELOG_ALPHA2.md,generated,18
+README.md,generated,18
+C.JPG,upload,24
+C(1).JPG,upload,28
+bot_engine.py,generated,41
+duration_clock.py,generated,43
+Trading_Turbo_4.0_Kraken_alpha2(1).zip,upload,45
+Texto colado(20260830-195405).txt,upload,89
+bot_engine.py,generated,91
+duration_clock.py,generated,91
+C(2).JPG,upload,93
+C(3).JPG,upload,98
+Ca.JPG,upload,98
+Texto colado(20260830-210309).txt,upload,124
+Texto colado(20260830-214733).txt,upload,145
+Trading_Turbo_4.0_Kraken_alpha2_lab_history.zip,generated,150
+Trading_Turbo_4.0_Kraken_alpha2_lab_history.zip,generated,150
+historico_base_trading_turbo.zip,generated,159
+historico_operacional_consolidado.csv,generated,159
+lab_history_base_reconstruido.csv,generated,159
+
+--------------------------------------------------------------------------------------------------------------------------
+
+nome,origem,turno_usuario
+trading turbo(2).zip,upload,0
+README.md,generated,7
+ROADMAP_V4.md,generated,7
+Trading_Turbo_4.0_Adaptive_Engine_alpha1.zip,generated,7
+bot_kraken_web_railway (1).zip,upload,17
+Trading_Turbo_4.0_Kraken_alpha2.zip,generated,18
+CHANGELOG_ALPHA2.md,generated,18
+README.md,generated,18
+C.JPG,upload,24
+C(1).JPG,upload,28
+bot_engine.py,generated,41
+duration_clock.py,generated,43
+Trading_Turbo_4.0_Kraken_alpha2(1).zip,upload,45
+Texto colado(20260830-195405).txt,upload,89
+bot_engine.py,generated,91
+duration_clock.py,generated,91
+C(2).JPG,upload,93
+C(3).JPG,upload,98
+Ca.JPG,upload,98
+Texto colado(20260830-210309).txt,upload,124
+Texto colado(20260830-214733).txt,upload,145
+Trading_Turbo_4.0_Kraken_alpha2_lab_history.zip,generated,150
+Trading_Turbo_4.0_Kraken_alpha2_lab_history.zip,generated,150
+historico_base_trading_turbo.zip,generated,159
+historico_operacional_consolidado.csv,generated,159
+lab_history_base_reconstruido.csv,generated,159
+
+--------------------------------------------------------------------------------------------------------------------------
+
+id,categoria,prioridade,status,titulo,descoberta_ou_regra,evidencia_atual,decisao,nao_alterar_agora,proximo_teste_ou_acao
+P001,progresso,CRITICA,ATIVO,Status geral do projeto,Projeto está em 43%.,Coleta e observabilidade em andamento; ainda sem validação suficiente para avanço de marco.,Manter 43% até completar um marco real de validação.,Não aumentar percentual apenas porque chegaram mais dados.,Concluir observabilidade para buscar marco de 50%.
+P002,progresso,ALTA,PLANEJADO,Marco 50%,Observabilidade validada.,"Deve incluir frequência, tempo sem operação, 4/5 rejeitados, duração 5–60M, precisão e coerência da UI.",Só marcar 50% quando este pacote estiver validado.,Não confundir instrumentação instalada com validação concluída.,Acumular amostras independentes e revisar qualidade dos dados.
+P003,progresso,MEDIA,PLANEJADO,Marco 65%,Memória histórica estruturada.,"Meta prevista: contexto 12/9/6/3 meses, entradas, rejeições, par, regime e setup.",Implementar depois da observabilidade.,Não antecipar adaptação sem memória confiável.,Projetar Memory Engine sobre base histórica limpa.
+P004,progresso,MEDIA,PLANEJADO,Marco 80%,Adaptação controlada.,"Deve usar evidência, mínimo de amostras, shadow e rollback.",Adaptar só parâmetros comprovadamente úteis.,Não permitir autoajuste livre/instável.,Validar seletor temporal e pesos em shadow.
+P005,progresso,MEDIA,PLANEJADO,Marco 90%,Validação robusta.,"Backtests, paper prolongado, robustez/out-of-sample, drawdown, profit factor e frequência.",Congelar candidatos que sobrevivam aos testes.,Não otimizar apenas uma janela.,Executar testes multi-janela e fora de amostra.
+P006,progresso,MEDIA,PLANEJADO,Marco 100%,Versão estável congelada.,"Arquitetura documentada, regras, limites de risco e sem ajuste manual constante.",Encerrar ciclo apenas quando robustez estiver demonstrada.,Não chamar de concluído por performance curta.,Congelar versão estável após validação final.
+A001,arquitetura,CRITICA,CONFIRMADO,Projeto unificado,Um sistema único; componentes não competem como bots separados.,Decisão arquitetural consolidada ao longo dos testes.,"Estratégias descartadas viram sintomas, gatilhos ou vetos auxiliares.",Não voltar ao modelo de especialistas concorrentes como núcleo.,Manter Orchestrator como autoridade final.
+A002,arquitetura,ALTA,CONFIRMADO,Structure Engine,"Mapeia tendência, S/R, rompimento, reteste e inversão de papel.",Esses elementos formam o mapa estrutural central.,Preservar como primeiro motor.,Não diluir estrutura com muitos indicadores.,Aprofundar role reversal em shadow.
+A003,arquitetura,ALTA,CONFIRMADO,Behavior Engine,"Pullback, rejeição, volume, ATR, momentum, exaustão, VWAP etc. são sintomas.","Úteis para confirmar contexto, não para competir entre si.",Usar como evidência auxiliar simples.,Não criar árvore excessiva de indicadores.,Medir quais sintomas realmente melhoram o desempate 4/5.
+A004,arquitetura,MEDIA,PLANEJADO,Memory Engine,Histórico de contexto e resultado em múltiplas janelas.,Ainda não está completo; há base de laboratório acumulada.,Construir memória depois da observabilidade.,Não usar memória incompleta para autoajuste agressivo.,Estruturar 12/9/6/3m e evidência por contexto.
+A005,arquitetura,ALTA,CONFIRMADO,Orchestrator,"Seleciona pares, aplica vetos e autoriza entrada final.",Modelo 100→Top25 já é o primeiro protótipo de seleção.,Manter decisão final centralizada.,Não deixar módulos auxiliares abrirem posições sozinhos.,Evoluir futuramente para seleção multidimensional.
+R001,regra_de_desenvolvimento,CRITICA,CONFIRMADO,Mudança cirúrgica,Uma mudança → teste → comparação → manter ou rollback.,Regra adotada para evitar perder uma baseline funcional.,Congelar baseline antes de qualquer ajuste.,"Não mudar tendência, S/R, trigger, stop, alvo e risco juntos.",Qualquer novidade deve começar em SHADOW quando possível.
+R002,regra_de_desenvolvimento,CRITICA,CONFIRMADO,Regra da simplicidade,Só adicionar profundidade se resolver problema concreto.,Complexidade desnecessária aumenta risco de overfitting.,Laboratório pode ser rico; regra final deve ser simples e explicável.,Não manter 10 features se 2 explicam o ganho.,Eliminar features que não adicionam evidência.
+R003,risco,CRITICA,CONFIRMADO,Sem martingale,Não forçar operações nem recuperar perda com aumento de risco.,Princípio de preservação de capital.,Ausência de oportunidade é dado útil.,Não afrouxar critérios para gerar frequência.,Medir frequência natural das oportunidades de qualidade.
+S001,estrategia,CRITICA,HISTORICO_FORTE,Tendência Confirmada,Foi o componente historicamente mais forte nos testes relatados.,Usuário relatou que permaneceu verde inclusive em teste severo; resultados históricos não são garantia futura.,Preservar como núcleo estrutural.,Não diluir com estratégias concorrentes.,Validar novamente em dados robustos e fora de amostra.
+S002,estrategia,ALTA,HISTORICO_FORTE,Suporte/Resistência,"Relato histórico de aproximadamente 95%, às vezes próximo de 100%, em testes.","Conceito: perto de S/R forte, sintomas de rejeição favorecem afastamento; rompimento verdadeiro invalida.",Preservar S/R e tratar inversão de papel explicitamente.,Não transformar porcentagens históricas em promessa.,"Medir qualidade do nível, espaço livre e aceitação/rompimento."
+S003,estrategia,ALTA,CONFIRMADO,Role reversal,Resistência rompida/aceita pode virar suporte e suporte rompido pode virar resistência.,Regra estrutural essencial identificada.,Incorporar de forma explícita quando validado.,Não assumir troca de papel sem aceitação/reteste.,Aprofundar telemetria de rompimento e reteste.
+U001,universo,ALTA,ATIVO,Radar 100→Top25,Varredura leve de até 100 pares e análise pesada do Top25 dinâmico.,Alpha2 já opera com RADAR_SIZE=100 e FOCUS_SIZE=25.,Manter funil e histerese/stickiness.,Não reduzir critério de entrada para aumentar trades.,Avaliar qualidade e saturação do ranking.
+U002,universo,ALTA,INVESTIGAR,Qualidade do Top25,Pares de baixa mobilidade como USDPT/RLUSD aparecem frequentemente e geram muitos TIEs.,"Também há múltiplos scores exatamente 70, sugerindo saturação/clustering.",Investigar se score premia estrutura bonita sem movimento explorável.,Não alterar pesos do radar por intuição.,"Medir volatilidade útil, mobilidade e distribuição dos scores."
+U003,universo,MEDIA,FUTURO,Expansão 200→50,Aumentar universo em vez de enfraquecer 5/5.,Conceito aprovado apenas como experimento futuro.,Testar depois que duração e trigger estiverem compreendidos.,Não contaminar o experimento atual.,Criar LAB B controlado quando o core estiver estável.
+T001,tempo,CRITICA,ATIVO,15M é timeframe de decisão,15M de análise não significa duração fixa de 15 minutos.,Alpha2 usa decisão 15M e saída oficial por stop/target.,Manter distinção entre timeframe e duração.,Não introduzir expiração fixa na operação oficial agora.,Usar Duration Shadow para medir horizontes.
+T002,tempo,CRITICA,ATIVO,Duration Shadow 5–60M,Cada sinal é medido em 5/10/15/20/30/45/60 minutos com relógio próprio.,Múltiplos clocks SHADOW podem coexistir sem afetar saldo.,Continuar coleta separando 4/5 e 5/5.,Não escolher melhor duração com amostra pequena.,Acumular amostras independentes e comparar por contexto.
+T003,tempo,ALTA,HIPOTESE,"15M promissor, 30–60M relevantes","15M continua promissor, mas alguns movimentos cresceram em 30/45/60M.",Ex.: FLOW ampliou movimento em horizontes maiores; BONK/GALA variam por amostra.,Tratar duração como possivelmente dependente de onda/contexto.,Não declarar uma duração universal vencedora.,"Medir distribuição por par, regime e qualidade do sinal."
+T004,tempo,MEDIA,FUTURO,Motor de Faixa Temporal Adaptativa,Aplicar scan/rank/select também à duração.,Ideia: 5/10/15/20/30/45/60 → faixa preferida com persistência/histerese.,Construir apenas depois de evidência suficiente.,Não usar duração para consertar entrada ruim.,"Primeiro validar se a oportunidade existe, depois selecionar duração."
+G001,gate,CRITICA,HIPOTESE_NAO_COMPROVADA,Gargalo 5/5 / Trigger,"Muitos sinais 4/5 estão faltando trigger, mas os resultados posteriores são mistos.","Há winners, losers e ties entre os 4/5 bloqueados.",Status oficial: hipótese de gargalo ainda NÃO comprovada.,Não remover nem afrouxar trigger agora.,Aumentar amostra e analisar contexto dos 4/5.
+G002,gate,ALTA,INVESTIGAR,Semântica do gate,Algumas condições de tendência no x/5 são parcialmente redundantes.,1h_direction + 15m_alignment praticamente implicam confirmed_trend em vários casos.,Revisar semântica somente depois da coleta atual.,Não alterar contagem durante o experimento em andamento.,Mapear contribuição independente de cada check.
+G003,gate,ALTA,PLANEJADO,Desempate profundo 4/5,"Telemetria richer: slope, força de tendência, S/R, ATR, volume, momentum, wick/body, espaço livre, reteste.",Necessária para saber por que 4/5 winners diferem dos losers.,"Adicionar como SHADOW/telemetria, não como regra imediata.",Não transformar todas as features em gate.,Medir poder discriminativo e manter apenas features úteis.
+D001,dados,CRITICA,INTEGRADO,lab_history.csv,Logger científico acumulado integrado ao projeto.,"Uma linha por amostra, atualizada nos horizontes 5–60M.",Usar como base de pesquisa do laboratório.,Não confundir integração com persistência garantida.,Confirmar arquivo preenchendo na versão implantada.
+D002,dados,CRITICA,RISCO_OPERACIONAL,Persistência Railway,Filesystem local pode ser perdido em redeploy/container replacement sem Volume/storage externo.,Persistência durável ainda não foi comprovada.,Preservar/exportar histórico ou configurar storage persistente.,Não assumir que CSV local é histórico eterno.,Avaliar Railway Volume ou armazenamento externo.
+D003,dados,ALTA,INVESTIGAR,TIE e precisão,TIE verdadeiro deve ser separado de empate aparente por arredondamento/precisão.,Duration Shadow usa float bruto; pares pouco móveis ainda geram muitos TIEs.,"Guardar entry_raw, exit_raw, delta e precisão máxima do feed.",Não arredondar para decidir WIN/LOSS.,Classificar true TIE versus apparent TIE.
+D004,dados,ALTA,CONFIRMADO,Histórico reconstruído,Foi criado arquivo recuperável a partir dos logs disponíveis nesta conversa.,Base reconstruída não equivale à exportação textual integral do ChatGPT.,"Usar como base de laboratório, preservando lacunas como vazias.",Não inventar campos ausentes.,"Quando disponível, incorporar conversations.json e arquivos históricos adicionais."
+B001,baseline,CRITICA,CONGELADA,Alpha2 atual,"Base oficial: Kraken/PAPER, decisão 15M, contexto 1H, radar100→Top25, risco 0,5%, RR1,5.",Arquitetura e telemetria atuais foram validadas para compilação e execução.,Tratar commit atual como baseline congelada.,Não reconstruir projeto do zero.,Somente mudanças cirúrgicas após evidência.
+B002,baseline,ALTA,CONFIRMADO,Uma posição PAPER global,A execução oficial permite uma posição global por vez.,SHADOW pode observar vários sinais simultaneamente.,Manter durante experimento atual.,Não habilitar simultaneidade real agora.,Medir custo de oportunidade antes de mudar.
+B003,baseline,MEDIA,OBSERVADO,Assimetria de resultado,"Em amostra pequena: 1 WIN +R$7,46 e 1 LOSS -R$5 = +R$2,46.",Mostra que taxa de acerto isolada não basta; amostra é pequena.,Acompanhar win rate + avg win/loss + PF + DD + frequência.,Não concluir rentabilidade a partir de 2 trades.,Acumular amostra operacional maior.
+I001,interface,MEDIA,INVESTIGAR,Coerência do ativo exibido,Houve screenshot com possível mistura de ativo/preço e S/R de outro par/ciclo.,Bug parece intermitente; screenshot posterior estava coerente.,Corrigir depois das prioridades de duração/trigger.,Não mexer UI durante coleta sem necessidade.,Garantir snapshot atômico por símbolo/ciclo.
+I002,interface,BAIXA,FUTURO,Painel visual de duração,Desejado para mostrar resultados 5–60M.,Postergado para não alterar experiência durante coleta.,Adicionar depois da estabilização.,Não priorizar estética sobre dados.,Construir após consolidar métricas do Duration Shadow.
+F001,frequencia,MEDIA,INVESTIGAR,Frequência potencial,Frequência deve ser medida como sinais válidos/dia × duração × simultaneidade.,Uma posição global pode bloquear outra boa oportunidade.,Medir custo de oportunidade sem afrouxar 5/5.,Não definir meta arbitrária de trades/dia.,Registrar sinais simultâneos e oportunidades bloqueadas.
+X001,expansao,BAIXA,FUTURO,Arquitetura por Terrenos,"Mesmo cérebro, laboratórios separados por classe de mercado; perfil próprio só se dados provarem necessidade.","Conceito aprovado para próxima onda, não atual.",Preservar LAB A e iniciar LAB B do zero quando chegar a hora.,Não criar parâmetros diferentes só por suposição.,Comparar crypto/forex/índices ou outros terrenos com mesma técnica.
+X002,expansao,BAIXA,FUTURO,Seleção Multidimensional,VARREDURA → CLASSIFICAÇÃO → SELEÇÃO → DURAÇÃO → EXECUÇÃO.,"Generaliza 100→25 para ativos, terrenos e bandas temporais.",Guardar como direção arquitetural futura.,Não implementar antes do core atual estar validado.,Testar primeiro expansão espacial e temporal separadamente.
+X003,expansao,BAIXA,FUTURO,Operações multitemporais simultâneas,Sinais independentes poderiam coexistir em 5M/15M/30M com clocks e risco próprios.,Ideia tecnicamente compatível com clocks independentes.,"Somente futuro, com controle de exposição/correlação.",Não habilitar simultaneidade real agora.,Primeiro medir frequência e custo de oportunidade.
+X004,expansao,BAIXA,FUTURO,Modo Direcional 🟢/🔴,"Saída simples: ativo + direção + duração, usando o mesmo motor.","É camada de produto, não um bot concorrente.",Testar apenas depois de validar precisão/duração.,Não prometer lucratividade.,Prototipar sobre evidência do motor temporal.
+
