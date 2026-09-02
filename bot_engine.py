@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 import ccxt
 
+ENGINE_BUILD = 'ALPHA2-GATEOPEN-20260902-01'
+
 # ---------------- CONFIG KRAKEN / V4 ALPHA2 ----------------
 EXCHANGE_ID = os.getenv('EXCHANGE_ID', 'kraken').lower()
 # SYMBOL remains only as backwards-compatible/fallback symbol.
@@ -392,17 +394,21 @@ class TradingBot:
         # Telemetry: how near this symbol was to the final gate; observation only.
         price = float(closed['close'])
         level_dist = min(abs(price-support),abs(resistance-price))/max(atrv,1e-12) if np.isfinite(atrv) else 99
-        gate = 0
-        gate += 1 if c1['direction'] != 'neutral' else 0
-        gate += 1 if c15['direction'] == c1['direction'] and c15['direction'] != 'neutral' else 0
-        gate += 1 if level_dist <= 1.0 else 0
-        gate += 1 if trend != 'neutral' else 0
-        gate += 1 if sig else 0
+        gate_checks = {
+            '1h_direction': c1['direction'] != 'neutral',
+            '15m_alignment': c15['direction'] == c1['direction'] and c15['direction'] != 'neutral',
+            'near_level': level_dist <= 1.0,
+            'confirmed_trend': trend != 'neutral',
+            'trigger': bool(sig),
+        }
+        gate = sum(1 for ok in gate_checks.values() if ok)
+        missing_checks = [name for name, ok in gate_checks.items() if not ok]
         return {
             'symbol':symbol,'df':df,'closed':closed,'candle_id':candle_id,'atr':atrv,
             'support':support,'resistance':resistance,'trend':trend,'trend_quality':trend_q,
             'c1':c1,'c15':c15,'signal':sig,'reason':reason,'gate':gate,'level_dist_atr':round(level_dist,3),
             'radar_score':self.radar_scores.get(symbol,0.0),
+            'gate_checks':gate_checks,'missing_checks':missing_checks,
             'shadow_events':self.shadow_level_events(symbol,support,resistance,closed)
         }
 
@@ -521,7 +527,7 @@ class TradingBot:
                 'position':asdict(self.position) if self.position else None,'last_update':self.last_update,
                 'last_error':self.last_error,'stats':self.stats(),'logs':list(self.logs)[:120],'mode':'PAPER',
                 'radar':self.radar_snapshot(),'near_signals':self.near_signals[:10],
-                'architecture':'V4 alpha2 | Radar 100 -> Top 25 | decisão 15M | Tendência Confirmada + S/R'
+                'architecture':f'{ENGINE_BUILD} | Radar 100 -> Top25 | 5/5 + 4/5 qualificado | estudo 5/10/15M'
             }
 
     def start(self):
@@ -529,7 +535,7 @@ class TradingBot:
             if self.running: return False
             self.stop_event.clear(); self.running=True
             self.thread=threading.Thread(target=self.run_loop,daemon=True); self.thread.start()
-            self.add_log(f'V4 alpha2 iniciado | PAPER | decisão={DECISION_TIMEFRAME} | radar={RADAR_SIZE}->Top{FOCUS_SIZE} | saldo R${self.balance:.2f}')
+            self.add_log(f'{ENGINE_BUILD} iniciado | PAPER | decisão={DECISION_TIMEFRAME} | radar={RADAR_SIZE}->Top{FOCUS_SIZE} | saldo R${self.balance:.2f}')
             return True
 
     def stop(self):
@@ -560,6 +566,8 @@ class TradingBot:
         if not self.focus: return
         candidates=[]; near=[]
         top_display=None
+        focus_scores=[float(self.radar_scores.get(s,0.0)) for s in self.focus]
+        radar_median=float(np.median(focus_scores)) if focus_scores else 0.0
         for sym in list(self.focus):
             try:
                 ev=self.evaluate_symbol(sym)
@@ -570,6 +578,22 @@ class TradingBot:
                 for se in ev['shadow_events']:
                     self.add_log(f'{sym} | {se}')
                 if ev['signal'] and np.isfinite(ev['atr']):
+                    ev['entry_priority']=1  # 5/5 keeps priority
+                    candidates.append(ev)
+                elif (
+                    ev['gate'] == 4
+                    and ev.get('missing_checks') == ['trigger']
+                    and ev['trend'] in ('up','down')
+                    and np.isfinite(ev['atr'])
+                    and float(ev['radar_score']) >= radar_median
+                ):
+                    ev['signal'] = 'long' if ev['trend'] == 'up' else 'short'
+                    ev['reason'] = '4of5_fast15'
+                    ev['entry_priority'] = 0
+                    self.add_log(
+                        f"GATE OPEN | {sym} 4/5 faltando=trigger | "
+                        f"radar={float(ev['radar_score']):.1f} >= mediana_top25={radar_median:.1f} | AUTORIZADO PAPER"
+                    )
                     candidates.append(ev)
             except Exception as e:
                 self.radar_meta.setdefault(sym, {'symbol':sym})['error']=str(e)
@@ -583,7 +607,7 @@ class TradingBot:
         if self.position:
             return
         if candidates:
-            candidates.sort(key=lambda e:(e['trend_quality'],e['radar_score']), reverse=True)
+            candidates.sort(key=lambda e:(e.get('entry_priority',0),e['trend_quality'],e['radar_score']), reverse=True)
             best=candidates[0]
             global_id=f"{best['symbol']}|{best['candle_id']}"
             if global_id != self.last_signal_candle:
